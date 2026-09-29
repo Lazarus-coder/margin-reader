@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  # For retries, choose an existing v* tag as the workflow ref.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: Package ${{ matrix.platform }}-${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin
+            arch: arm64
+          - os: macos-15-intel
+            platform: darwin
+            arch: x64
+          - os: windows-2025
+            platform: win32
+            arch: x64
+          - os: ubuntu-24.04
+            platform: linux
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate the version tag
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (process.env.GITHUB_REF_TYPE !== 'tag' || process.env.GITHUB_REF_NAME !== `v${version}`) {
+            throw new Error(`Run this workflow from tag v${version}, matching package.json.`);
+          }
+          NODE
+      - run: npm ci
+      - run: npm test
+      - name: Build portable application and checksum
+        run: npm run release:local -- --platform ${{ matrix.platform }} --arch ${{ matrix.arch }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-${{ matrix.platform }}-${{ matrix.arch }}
+          path: release/downloads/*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  publish:
+    name: Publish complete release
+    needs: package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release/downloads
+      - name: Verify and publish every platform together
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: node scripts/publish-release.mjs

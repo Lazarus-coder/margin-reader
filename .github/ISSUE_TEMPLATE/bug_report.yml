@@ -1,0 +1,29 @@
+name: Bug report
+description: Report an issue with Margin.
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Margin version
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and architecture
+      placeholder: "macOS 15, Apple Silicon / Windows 11, x64 / Ubuntu 24.04, x64"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: What happened?
+      description: Include steps to reproduce, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional details
+      description: For garbled text, include the selected encoding and whether changing it helps. Screenshots or error messages are useful.

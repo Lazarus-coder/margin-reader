@@ -1,0 +1,13 @@
+node_modules/
+dist/
+release/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+.release-staging/
+artifacts/
