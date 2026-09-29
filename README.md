@@ -2,7 +2,7 @@
 
 **A little room to read. Even on a very busy-looking desktop.**
 
-[简体中文](README.zh-CN.md) · [Download](https://github.com/OWNER/margin-reader/releases/latest) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+[简体中文](README.zh-CN.md) · [Download](https://github.com/Lazarus-coder/margin-reader/releases/latest) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 Margin is a small, offline desktop reader for Chinese TXT novels. It opens as a plain text workspace: a neutral `notes.txt` tab, line numbers, and quiet controls. Put it in a corner, pick up where you left off, and switch to your notes with one key.
 
@@ -23,7 +23,7 @@ Margin is a small, offline desktop reader for Chinese TXT novels. It opens as a 
 
 ## Download and install
 
-Get an archive from the **Assets** section of the [latest release](https://github.com/OWNER/margin-reader/releases/latest). The app includes its runtime; **you do not need Node.js or npm**. GitHub's “Source code” archives are for developers.
+Get an archive from the **Assets** section of the [latest release](https://github.com/Lazarus-coder/margin-reader/releases/latest). The app includes its runtime; **you do not need Node.js or npm**. GitHub's “Source code” archives are for developers.
 
 | Your computer                        | Release file                    |
 | ------------------------------------ | ------------------------------- |
@@ -120,7 +120,7 @@ To update, quit Margin, download a newer release, and replace the application fi
 Use **Node.js 24** and npm.
 
 ```sh
-git clone https://github.com/OWNER/margin-reader.git
+git clone https://github.com/Lazarus-coder/margin-reader.git
 cd margin-reader
 npm ci
 npm run dev

@@ -2,7 +2,7 @@
 
 **桌面留一点空白，故事读到下一页。**
 
-[English](README.md) · [下载最新版](https://github.com/OWNER/margin-reader/releases/latest) · [更新记录](CHANGELOG.md) · [参与贡献](CONTRIBUTING.md)
+[English](README.md) · [下载最新版](https://github.com/Lazarus-coder/margin-reader/releases/latest) · [更新记录](CHANGELOG.md) · [参与贡献](CONTRIBUTING.md)
 
 余白是一款小巧、离线的 TXT 小说阅读器，专为中文阅读和桌面上的片刻休息而做。默认的 **Desk view（工作台视图）** 使用普通的 `notes.txt` 标签、行号和简洁控件，看起来像一个文本工具。把它放在屏幕角落，随时接着读；按一下 `Esc`，就能切换到自己的笔记。
 
@@ -23,7 +23,7 @@
 
 ## 下载与安装
 
-前往[最新 Release](https://github.com/OWNER/margin-reader/releases/latest)，在 **Assets** 中下载适合你电脑的安装包。**无需安装 Node.js 或 npm。** GitHub 自动生成的 “Source code” 是源码，不是可直接运行的应用。
+前往[最新 Release](https://github.com/Lazarus-coder/margin-reader/releases/latest)，在 **Assets** 中下载适合你电脑的安装包。**无需安装 Node.js 或 npm。** GitHub 自动生成的 “Source code” 是源码，不是可直接运行的应用。
 
 | 电脑类型                           | 下载文件                        |
 | ---------------------------------- | ------------------------------- |
@@ -120,7 +120,7 @@ macOS 提供 **Hide Dock icon（隐藏 Dock 图标）**，菜单栏入口仍然�
 开发需要 **Node.js 24** 和 npm。
 
 ```sh
-git clone https://github.com/OWNER/margin-reader.git
+git clone https://github.com/Lazarus-coder/margin-reader.git
 cd margin-reader
 npm ci
 npm run dev
