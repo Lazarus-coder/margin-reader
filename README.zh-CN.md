@@ -27,10 +27,10 @@
 
 | 电脑类型                           | 下载文件                        |
 | ---------------------------------- | ------------------------------- |
-| Apple Silicon Mac（M1 及更新芯片） | `Margin-1.1.0-macos-arm64.zip`  |
-| Intel Mac                          | `Margin-1.1.0-macos-x64.zip`    |
-| Windows，Intel/AMD 64 位           | `Margin-1.1.0-windows-x64.zip`  |
-| Linux，Intel/AMD 64 位             | `Margin-1.1.0-linux-x64.tar.gz` |
+| Apple Silicon Mac（M1 及更新芯片） | `Margin-1.1.1-macos-arm64.zip`  |
+| Intel Mac                          | `Margin-1.1.1-macos-x64.zip`    |
+| Windows，Intel/AMD 64 位           | `Margin-1.1.1-windows-x64.zip`  |
+| Linux，Intel/AMD 64 位             | `Margin-1.1.1-linux-x64.tar.gz` |
 
 请以 Release 页面上的版本号和文件名为准。发布包附带 SHA-256 校验值。macOS Apple Silicon 已在本地验证；其他平台由 GitHub Actions 构建。Linux 的部分窗口功能取决于桌面环境，详见下方说明。
 
@@ -41,7 +41,7 @@
 **Linux：** 解压后运行文件夹中的 `Margin`。需要图形桌面、Electron 所需系统依赖和中文字体。例如：
 
 ```sh
-tar -xzf Margin-1.1.0-linux-x64.tar.gz
+tar -xzf Margin-1.1.1-linux-x64.tar.gz
 cd Margin-linux-x64
 ./Margin
 ```
