@@ -46,6 +46,8 @@ cd Margin-linux-x64
 ./Margin
 ```
 
+Ubuntu 24.04 及更新版本的 AppArmor 用户命名空间限制可能导致沙箱无法启动。可能需要为 Margin 配置允许用户命名空间的独立 AppArmor 配置文件，参见 [Ubuntu 官方文档](https://documentation.ubuntu.com/security/security-features/privilege-restriction/apparmor/)。
+
 ## 开始阅读
 
 1. 点击 **Import .txt file**，按 `⌘O` / `Ctrl+O`，或将一个或多个 `.txt` 文件拖入窗口。单个文件最大 100 MB。

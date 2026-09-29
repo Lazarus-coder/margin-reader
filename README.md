@@ -46,6 +46,8 @@ cd Margin-linux-x64
 ./Margin
 ```
 
+On Ubuntu 24.04 and later, AppArmor's user-namespace restrictions may prevent the sandbox from starting. A per-app AppArmor profile allowing user namespaces for Margin may be needed; see [Ubuntu's documentation](https://documentation.ubuntu.com/security/security-features/privilege-restriction/apparmor/).
+
 ## Start reading
 
 1. Click **Import .txt file**, press `⌘O` / `Ctrl+O`, or drop one or more `.txt` files onto the window. Each file can be up to 100 MB.
