@@ -1,12 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-10-19
 
 ### Reading
 
 - Import EPUB, HTML, and Markdown books alongside TXT files.
-- Use EPUB headings and navigation documents as the chapter outline.
+- Build EPUB chapter outlines from heading tags, navigation documents, and in-text chapter headings such as 第一回.
 - Keep encoding detection and the manual override for TXT and HTML; EPUB files read as UTF-8.
+- Join CJK lines wrapped in source files without stray spaces.
+- Reject damaged, encrypted, or DRM-protected EPUB files with clear messages.
 
 ## 1.1.1 — 2026-09-29
 

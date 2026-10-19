@@ -65,7 +65,7 @@ if (existing && !existing.isDraft)
 const notes = path.join(directory, "release-notes.md");
 await writeFile(
   notes,
-  `Margin · 余白 ${version}\n\nA quiet, local reader for Chinese TXT novels, with a compact desk view, quick cover, bookmarks, and saved reading progress.\n\nDownload the archive for your operating system below. Node.js is not required. These portable builds are not signed with a developer certificate or notarized; consult the README for installation and platform limitations.\n\nmacOS: unzip and drag Margin.app into Applications. Windows: extract the whole folder and open Margin.exe. Linux: extract the tar.gz and run ./Margin from its folder. SHA256SUMS contains checksums for all four archives.\n`,
+  `Margin · 余白 ${version}\n\nA quiet, local reader for Chinese novels in TXT, EPUB, HTML, and Markdown — a compact desk view, quick cover, bookmarks, and saved reading progress.\n\nDownload the archive for your operating system below. Node.js is not required. These portable builds are not signed with a developer certificate or notarized; consult the README for installation and platform limitations.\n\nmacOS: unzip and drag Margin.app into Applications. Windows: extract the whole folder and open Margin.exe. Linux: extract the tar.gz and run ./Margin from its folder. SHA256SUMS contains checksums for all four archives.\n\n**中文说明**\n\n余白是一款小巧、离线的桌面小说阅读器，支持 TXT、EPUB、HTML 与 Markdown；工作台视图让它看起来像一份普通的工作文档，按 \`Esc\` 切到笔记、再按返回，另有失焦遮盖、全局老板键与角落小窗。完全本地运行，无需注册或联网。安装方法与平台限制详见[中文 README](https://github.com/Lazarus-coder/margin-reader/blob/main/README.zh-CN.md)。\n`,
 );
 if (!existing)
   gh([
