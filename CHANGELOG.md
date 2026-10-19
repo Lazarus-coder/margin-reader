@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Distribution
+
+- Add a macOS disk image (.dmg): open it, drag Margin into Applications, and launch.
+- Add a Windows installer: a per-user setup wizard with Start menu and optional desktop shortcuts.
+- Keep portable .zip / .tar.gz archives for every platform; all downloads ship with SHA-256 checksums.
+
 ## 1.3.0 — 2026-10-19
 
 ### Reading
