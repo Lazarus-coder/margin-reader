@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Desktop
+
+- New vermilion-seal app icon with a matching menu bar / tray mark.
+
 ## 1.2.0 — 2026-10-19
 
 ### Reading

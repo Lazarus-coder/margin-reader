@@ -280,31 +280,40 @@ function setHideDock(hideDock) {
 }
 
 // A tiny local PNG keeps the tray independent of downloaded assets or icon packages.
+// The mark mirrors the app's seal: a rounded stamp outline with a centered bar,
+// supersampled 4x so the edges stay smooth at menu-bar size.
 function trayIcon() {
-  const size = 36;
+  const size = 36; // 18 points at 2x, kept crisp on Retina menu bars
   const pixels = Buffer.alloc((size * 4 + 1) * size);
+  const samples = 4;
+  const insideRoundedRect = (px, py, left, top, right, bottom, radius) => {
+    if (px < left || px > right || py < top || py > bottom) return false;
+    const dx = px - Math.min(Math.max(px, left + radius), right - radius);
+    const dy = py - Math.min(Math.max(py, top + radius), bottom - radius);
+    return dx * dx + dy * dy <= radius * radius;
+  };
+  const ringOuter = [7.3, 7.3, 28.7, 28.7, 6.3];
+  const ringInner = [9.9, 9.9, 26.1, 26.1, 3.7];
+  const bar = [13.4, 16.2, 22.6, 19.8, 1.8];
+  const sampleHit = (px, py) =>
+    (insideRoundedRect(px, py, ...ringOuter) &&
+      !insideRoundedRect(px, py, ...ringInner)) ||
+    insideRoundedRect(px, py, ...bar);
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const border =
-        ((x === 7 || x === 8 || x === 27 || x === 28) && y >= 7 && y <= 28) ||
-        ((y === 7 || y === 8 || y === 27 || y === 28) && x >= 7 && x <= 28);
-      const spine = (x === 12 || x === 13) && y >= 7 && y <= 28;
-      const textLine =
-        (y === 13 ||
-          y === 14 ||
-          y === 18 ||
-          y === 19 ||
-          y === 23 ||
-          y === 24) &&
-        x >= 17 &&
-        x <= 24;
-      if (border || spine || textLine) {
-        const index = y * (size * 4 + 1) + 1 + x * 4;
-        pixels[index] = 45;
-        pixels[index + 1] = 54;
-        pixels[index + 2] = 47;
-        pixels[index + 3] = 255;
+      let hits = 0;
+      for (let sy = 0; sy < samples; sy += 1) {
+        for (let sx = 0; sx < samples; sx += 1) {
+          if (sampleHit(x + (sx + 0.5) / samples, y + (sy + 0.5) / samples))
+            hits += 1;
+        }
       }
+      if (!hits) continue;
+      const index = y * (size * 4 + 1) + 1 + x * 4;
+      pixels[index] = 59;
+      pixels[index + 1] = 64;
+      pixels[index + 2] = 54;
+      pixels[index + 3] = Math.round((hits * 255) / (samples * samples));
     }
   }
   function chunk(type, data) {
@@ -332,9 +341,7 @@ function trayIcon() {
     chunk("IDAT", deflateSync(pixels)),
     chunk("IEND", Buffer.alloc(0)),
   ]);
-  const icon = nativeImage
-    .createFromBuffer(png)
-    .resize({ width: 18, height: 18 });
+  const icon = nativeImage.createFromBuffer(png, { scaleFactor: 2 });
   icon.setTemplateImage(isMac);
   return icon;
 }
@@ -460,9 +467,21 @@ function createMenu() {
   );
 }
 
+const CLASSIC_BOOKS = new Set(["sanguo", "shuihu", "xiyouji", "hongloumeng"]);
+
+function readClassicBook(id) {
+  if (typeof id !== "string" || !CLASSIC_BOOKS.has(id))
+    throw new TypeError("Unknown classic book.");
+  return fs.readFileSync(
+    path.join(__dirname, "../assets/classics/", `${id}.txt`),
+    "utf8",
+  );
+}
+
 function installIPC() {
   const handlers = {
     "reader:get-state": () => state(),
+    "reader:read-classic": (_, id) => readClassicBook(id),
     "reader:set-compact": (_, value) => setCompact(value),
     "reader:set-always-on-top": (_, value) => setAlwaysOnTop(value),
     "reader:set-opacity": (_, value) => setOpacity(value),

@@ -1,15 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="graphite" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#4b525d"/>
-      <stop offset="0.5" stop-color="#3c424c"/>
-      <stop offset="1" stop-color="#313740"/>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfcf8"/>
+      <stop offset="1" stop-color="#eeeadd"/>
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="14" stdDeviation="15" flood-color="#171b22" flood-opacity="0.2"/>
-    </filter>
+    <linearGradient id="seal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c75134"/>
+      <stop offset="1" stop-color="#a93a24"/>
+    </linearGradient>
   </defs>
-  <rect x="80" y="80" width="864" height="864" rx="194" fill="url(#graphite)" filter="url(#shadow)"/>
-  <rect x="81" y="81" width="862" height="862" rx="193" fill="none" stroke="#ffffff" stroke-opacity="0.13" stroke-width="2"/>
-  <path d="M300 380 L456 512 L300 644 M550 644 H728" fill="none" stroke="#f2f1ed" stroke-width="52" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="80" y="80" width="864" height="864" rx="194" fill="url(#paper)"/>
+  <rect x="81" y="81" width="862" height="862" rx="193" fill="none" stroke="#3b4036" stroke-opacity="0.08" stroke-width="2"/>
+  <rect x="276" y="276" width="472" height="472" rx="72" fill="url(#seal)"/>
+  <rect x="298" y="298" width="428" height="428" rx="54" fill="none" stroke="#f6f3ec" stroke-opacity="0.45" stroke-width="10"/>
+  <g transform="translate(342.0 635.9) scale(0.66598 -0.66598)"><path d="M237.1 420.4C177.7 366.6 103.4 321.5 13.8 285.2L41.5 235.5C68.1 247.3 93.7 259.6 117.2 272.4L117.2 236.0L234.5 236.0L234.5 185.9L45.1 185.9L45.1 133.6L234.5 133.6L234.5 25.1C234.5 8.2 225.8 -0.5 208.4 -0.5C191.0 -0.5 172.0 0.5 152.6 2.6L164.4 -48.1L226.8 -48.1C266.8 -48.1 287.2 -28.2 287.2 11.8L287.2 133.6L468.0 133.6L468.0 185.9L287.2 185.9L287.2 236.0L394.8 236.0L394.8 271.9C417.8 259.1 442.4 247.3 468.5 236.0L496.6 285.2C412.7 318.5 338.9 363.5 274.9 420.4L237.1 420.4ZM142.3 286.7C185.9 312.8 223.7 341.5 256.0 372.7C289.3 341.0 327.2 312.3 369.2 286.7L142.3 286.7ZM137.2 109.6C114.7 66.0 80.4 31.2 33.8 4.6L74.2 -30.2C119.3 -2.0 156.2 38.4 183.8 90.6L137.2 109.6ZM374.3 118.3L332.8 92.2C377.9 47.1 413.2 6.7 438.8 -29.2L483.8 2.0C458.2 34.8 421.4 73.7 374.3 118.3Z" fill="#f6f3ec"/></g>
 </svg>
