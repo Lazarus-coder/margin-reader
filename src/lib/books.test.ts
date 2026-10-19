@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createSampleBook,
   decodeText,
+  detectFormat,
   getChapterForPosition,
   getParagraphs,
   makeBook,
@@ -145,8 +146,8 @@ describe("paragraphs and chapters", () => {
     ]);
   });
 
-  it("finds the active chapter on exact boundaries and out-of-range positions", () => {
-    const book = makeBook(
+  it("finds the active chapter on exact boundaries and out-of-range positions", async () => {
+    const book = await makeBook(
       "测试.TXT",
       new TextEncoder().encode("第一章\n开始。\n第二章\n结束。"),
     );
@@ -158,10 +159,61 @@ describe("paragraphs and chapters", () => {
     expect(getChapterForPosition(book, Number.NaN).title).toBe("第一章");
   });
 
-  it("rejects empty files with a useful message", () => {
-    expect(() =>
+  it("rejects empty files with a useful message", async () => {
+    await expect(
       makeBook("empty.txt", new TextEncoder().encode("\n\r\n　 ")),
-    ).toThrow("没有可阅读的文字");
+    ).rejects.toThrow("没有可阅读的文字");
+  });
+
+  it("detects the format from names and EPUB content signatures", () => {
+    const epubSignature = new Uint8Array([
+      0x50,
+      0x4b,
+      0x03,
+      0x04,
+      ...new TextEncoder().encode("application/epub+zip"),
+    ]);
+    expect(detectFormat("小说.epub", new Uint8Array())).toBe("epub");
+    expect(detectFormat("被改名的.txt", epubSignature)).toBe("epub");
+    expect(detectFormat("页面.XHTML", new Uint8Array())).toBe("html");
+    expect(detectFormat("散记.markdown", new Uint8Array())).toBe("md");
+    expect(detectFormat("小说.TXT", new Uint8Array())).toBe("txt");
+  });
+
+  it("imports HTML using heading tags as chapters", async () => {
+    const book = await makeBook(
+      "闲页.html",
+      new TextEncoder().encode(
+        "<html><body><h2>第一章 春天</h2><p>甲。</p><script>x()</script><p>乙。</p></body></html>",
+      ),
+    );
+    expect(book.format).toBe("html");
+    expect(book.title).toBe("闲页");
+    expect(book.chapters.map((chapter) => chapter.title)).toEqual([
+      "第一章 春天",
+    ]);
+    expect(getParagraphs(book.text)).toEqual(["第一章 春天", "甲。", "乙。"]);
+  });
+
+  it("imports Markdown with headings, emphasis, and lists", async () => {
+    const book = await makeBook(
+      "散记.markdown",
+      new TextEncoder().encode(
+        "# 第一章 春天\n\n**正文**开始，\n继续。\n\n> 引用行\n\n- 其一\n- 其二\n",
+      ),
+    );
+    expect(book.format).toBe("md");
+    expect(book.title).toBe("散记");
+    expect(book.chapters.map((chapter) => chapter.title)).toEqual([
+      "第一章 春天",
+    ]);
+    expect(getParagraphs(book.text)).toEqual([
+      "第一章 春天",
+      "正文开始，继续。",
+      "引用行",
+      "其一",
+      "其二",
+    ]);
   });
 
   it("provides a readable original Chinese sample with multiple chapters", () => {

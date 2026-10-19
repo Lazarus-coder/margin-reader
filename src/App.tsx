@@ -117,6 +117,12 @@ const pct = (book: Book) => {
   }
   return Math.round((book.position / Math.max(1, cached.count - 1)) * 100);
 };
+const bookFormatTag = (book: Book) => {
+  if (book.format === "epub") return "EPUB";
+  if (book.format === "html") return "HTML";
+  if (book.format === "md") return "MD";
+  return book.encoding.toUpperCase();
+};
 const Icon = ({
   children,
   label,
@@ -581,8 +587,8 @@ export default function App() {
     let count = 0;
     const errors: string[] = [];
     for (const file of Array.from(files)) {
-      if (!/\.txt$/i.test(file.name)) {
-        errors.push(`${file.name}: choose a .txt file`);
+      if (!/\.(txt|epub|x?html?|md|markdown)$/i.test(file.name)) {
+        errors.push(`${file.name}: unsupported file type`);
         continue;
       }
       if (file.size > 100 * 1024 * 1024) {
@@ -590,7 +596,7 @@ export default function App() {
         continue;
       }
       try {
-        const next = makeBook(
+        const next = await makeBook(
           file.name,
           new Uint8Array(await file.arrayBuffer()),
           encoding,
@@ -934,7 +940,9 @@ export default function App() {
                                     ? prefs.workspaceMode
                                       ? "UTF-8 · Sample file"
                                       : "A little story to start"
-                                    : item.encoding.toUpperCase() + " · TXT"}
+                                    : item.format && item.format !== "txt"
+                                      ? bookFormatTag(item)
+                                      : item.encoding.toUpperCase() + " · TXT"}
                                 </span>
                                 <span className="book-progress">
                                   <i style={{ width: `${pct(item)}%` }} />
@@ -959,8 +967,8 @@ export default function App() {
                       >
                         <Plus size={16} />{" "}
                         {prefs.workspaceMode
-                          ? "Import .txt file"
-                          : "Import a .txt book"}
+                          ? "Import book file"
+                          : "Import a book"}
                       </button>
                       {book && (
                         <>
@@ -1309,7 +1317,7 @@ export default function App() {
                             </p>
                             <span>
                               {prefs.workspaceMode
-                                ? `${paragraphs.length} lines · ${book.encoding.toUpperCase()}`
+                                ? `${paragraphs.length} lines · ${bookFormatTag(book)}`
                                 : "You’ve reached the end. Stay a little longer."}
                             </span>
                           </>
@@ -1323,7 +1331,7 @@ export default function App() {
                         {prefs.workspaceMode ? (
                           <span className="workspace-status">
                             Ln {book.position + 1}
-                            <span>{book.encoding.toUpperCase()}</span>
+                            <span>{bookFormatTag(book)}</span>
                             {prefs.pinned && <Pin size={10} />}
                           </span>
                         ) : compact ? (
@@ -1331,7 +1339,7 @@ export default function App() {
                         ) : (
                           <>
                             <span className="status-dot" />
-                            {book.encoding.toUpperCase()}
+                            {bookFormatTag(book)}
                             <span className="footer-separator">·</span>Progress
                             saved
                           </>
@@ -1407,7 +1415,7 @@ export default function App() {
                   <p>
                     {prefs.workspaceMode ? (
                       <>
-                        Drop a .txt file here or choose one below.
+                        Drop a book file here or choose one below.
                         <br />
                         Your position is saved on this device.
                       </>
@@ -1424,11 +1432,11 @@ export default function App() {
                     onClick={() => setImportOpen(true)}
                   >
                     <Plus size={16} />{" "}
-                    {prefs.workspaceMode
-                      ? "Import .txt file"
-                      : "Import a .txt book"}
+                    {prefs.workspaceMode ? "Import book file" : "Import a book"}
                   </button>
-                  <small>中文小说，安心阅读 · UTF-8, GBK & Big5</small>
+                  <small>
+                    中文小说，安心阅读 · TXT / EPUB / HTML / Markdown
+                  </small>
                 </div>
               )}
             </main>
@@ -1760,8 +1768,8 @@ export default function App() {
       {dragging && (
         <div className="drop-overlay">
           <Upload size={38} strokeWidth={1.4} />
-          <h2>Import text files</h2>
-          <p>Drop your .txt files anywhere.</p>
+          <h2>Import your books</h2>
+          <p>Drop TXT, EPUB, HTML, or Markdown files anywhere.</p>
         </div>
       )}
       {toast && (
@@ -1798,10 +1806,13 @@ export default function App() {
             </div>
             <h2 id="import-title">
               {prefs.workspaceMode
-                ? "Import text file"
+                ? "Import book file"
                 : "Make room for a new story."}
             </h2>
-            <p>Open a local .txt file. Progress is saved automatically.</p>
+            <p>
+              Open a local TXT, EPUB, HTML, or Markdown file. Progress is saved
+              automatically.
+            </p>
             <button
               className="file-drop"
               disabled={importing}
@@ -1809,12 +1820,12 @@ export default function App() {
             >
               <Upload size={25} strokeWidth={1.3} />
               <strong>
-                {importing ? "Opening file…" : "Choose a .txt file"}
+                {importing ? "Opening file…" : "Choose a book file"}
               </strong>
               <span>or drag and drop it here · up to 100 MB</span>
             </button>
             <label className="encoding-label">
-              Text encoding
+              Text encoding · TXT / HTML
               <select
                 aria-label="Text encoding"
                 value={encoding}
@@ -1832,7 +1843,7 @@ export default function App() {
             </label>
             <p className="encoding-help">
               乱码？Choose GBK or Big5 and import again. Old Chinese novels
-              sometimes need a little help.
+              sometimes need a little help. EPUB files don’t need this setting.
             </p>
             <div className="modal-privacy">
               <ShieldCheck size={14} /> Your books stay on this device. Always.
@@ -1843,10 +1854,10 @@ export default function App() {
       <input
         ref={fileInput}
         type="file"
-        accept=".txt,text/plain"
+        accept=".txt,.epub,.html,.htm,.xhtml,.md,.markdown,text/plain,application/epub+zip,text/html,text/markdown"
         multiple
         className="hidden-file"
-        aria-label="Import text files"
+        aria-label="Import book files"
         onChange={(event) => {
           if (event.target.files) void importFiles(event.target.files);
         }}
@@ -1910,8 +1921,8 @@ export default function App() {
             <h2 id="remove-title">Remove this book?</h2>
             <p>
               “{books.find((b) => b.id === removeId)?.title}” and its reading
-              progress will be removed from this app. Your original .txt file
-              stays untouched.
+              progress will be removed from this app. Your original file stays
+              untouched.
             </p>
             <div className="modal-actions">
               <button

@@ -33,6 +33,90 @@ async function launchReader(profile: string) {
   });
 }
 
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for (let index = 0; index < 256; index++) {
+    let value = index;
+    for (let bit = 0; bit < 8; bit++)
+      value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+    table[index] = value >>> 0;
+  }
+  return table;
+})();
+
+function crc32(data: Buffer): number {
+  let value = 0xffffffff;
+  for (const byte of data)
+    value = CRC_TABLE[(value ^ byte) & 0xff] ^ (value >>> 8);
+  return (value ^ 0xffffffff) >>> 0;
+}
+
+function buildEpubFixture(): Buffer {
+  const files: [string, string][] = [
+    ["mimetype", "application/epub+zip"],
+    [
+      "META-INF/container.xml",
+      '<?xml version="1.0"?><container><rootfiles>' +
+        '<rootfile full-path="OEBPS/content.opf"/></rootfiles></container>',
+    ],
+    [
+      "OEBPS/content.opf",
+      '<?xml version="1.0"?><package><metadata>' +
+        "<dc:title>窗边的余白</dc:title></metadata><manifest>" +
+        '<item id="c1" href="ch1.xhtml" media-type="application/xhtml+xml"/>' +
+        '<item id="c2" href="ch2.xhtml" media-type="application/xhtml+xml"/>' +
+        '</manifest><spine><itemref idref="c1"/><itemref idref="c2"/></spine></package>',
+    ],
+    [
+      "OEBPS/ch1.xhtml",
+      "<html><body><h1>第一章 书页之间</h1><p>下午三点，城里的雨停了。</p></body></html>",
+    ],
+    [
+      "OEBPS/ch2.xhtml",
+      "<html><body><h1>第二章 旧书店</h1><p>河水比地图上画的宽一些。</p></body></html>",
+    ],
+  ];
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
+  let offset = 0;
+  for (const [name, content] of files) {
+    const nameBytes = Buffer.from(name);
+    const data = Buffer.from(content);
+    const checksum = crc32(data);
+    const local = Buffer.alloc(30 + nameBytes.length + data.length);
+    local.writeUInt32LE(0x04034b50, 0);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt32LE(checksum, 14);
+    local.writeUInt32LE(data.length, 18);
+    local.writeUInt32LE(data.length, 22);
+    local.writeUInt16LE(nameBytes.length, 26);
+    nameBytes.copy(local, 30);
+    data.copy(local, 30 + nameBytes.length);
+    locals.push(local);
+
+    const central = Buffer.alloc(46 + nameBytes.length);
+    central.writeUInt32LE(0x02014b50, 0);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt32LE(checksum, 16);
+    central.writeUInt32LE(data.length, 20);
+    central.writeUInt32LE(data.length, 24);
+    central.writeUInt16LE(nameBytes.length, 28);
+    central.writeUInt32LE(offset, 42);
+    nameBytes.copy(central, 46);
+    centrals.push(central);
+    offset += local.length;
+  }
+  const centralSize = centrals.reduce((sum, part) => sum + part.length, 0);
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(files.length, 8);
+  eocd.writeUInt16LE(files.length, 10);
+  eocd.writeUInt32LE(centralSize, 12);
+  eocd.writeUInt32LE(offset, 16);
+  return Buffer.concat([...locals, ...centrals, eocd]);
+}
+
 test("Chinese novels keep their chapters, bookmarks, appearance, and complete text", async ({}, testInfo) => {
   test.setTimeout(120_000);
   const profile = await mkdtemp(path.join(tmpdir(), "margin-reading-test-"));
@@ -190,9 +274,7 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
     });
 
     await test.step("honors a manual GBK override and reports empty imports", async () => {
-      await page
-        .getByRole("button", { name: "Import a .txt book", exact: true })
-        .click();
+      await page.locator(".import-dashed").click();
       await page
         .getByRole("combobox", { name: "Text encoding", exact: true })
         .selectOption("gb18030");
@@ -205,9 +287,7 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
       await expect(page.locator(".chapter-foot-label")).toContainText(
         "GB18030",
       );
-      await page
-        .getByRole("button", { name: "Import a .txt book", exact: true })
-        .click();
+      await page.locator(".import-dashed").click();
       await page
         .getByRole("combobox", { name: "Text encoding", exact: true })
         .selectOption("auto");
@@ -286,6 +366,23 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
         .click();
       await expect(progress).toHaveValue("160");
       await expect(rendered.first()).toHaveText(allParagraphs[160]);
+    });
+
+    await test.step("imports an EPUB with its own chapter outline", async () => {
+      await page.locator(".import-dashed").click();
+      await fileInput.setInputFiles({
+        name: "余白小样.epub",
+        mimeType: "application/epub+zip",
+        buffer: buildEpubFixture(),
+      });
+      await expect(
+        page.getByRole("heading", { name: "第一章 书页之间", exact: true }),
+      ).toBeVisible();
+      await expect(page.locator(".chapter-list button")).toHaveCount(2);
+      await expect(
+        page.getByRole("button", { name: "Remove 窗边的余白", exact: true }),
+      ).toHaveCount(1);
+      await expect(page.locator(".book-item").first()).toContainText("EPUB");
     });
 
     expect(errors).toEqual([]);

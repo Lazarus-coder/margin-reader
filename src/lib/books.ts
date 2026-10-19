@@ -1,5 +1,10 @@
+import { extractEpub, looksLikeEpub } from "./epub";
+import { htmlToBlocks, markdownToBlocks } from "./markup";
+
 export type Encoding =
   "auto" | "utf-8" | "gb18030" | "big5" | "utf-16le" | "utf-16be";
+
+export type BookFormat = "txt" | "epub" | "html" | "md";
 
 export interface Chapter {
   id: string;
@@ -16,6 +21,7 @@ export interface Book {
   fileName: string;
   text: string;
   encoding: string;
+  format?: BookFormat;
   chapters: Chapter[];
   addedAt: number;
   updatedAt: number;
@@ -167,27 +173,84 @@ export function getParagraphs(text: string): string[] {
 const chapterHeading =
   /^(?:第\s*[零〇一二三四五六七八九十百千万萬两兩壹贰貳叁參肆伍陆陸柒捌玖拾佰仟\d０-９]+\s*[章回节節卷部篇集](?:\s|[：:、.．·—-]|$)|第\s*[零〇一二三四五六七八九十百千万萬两兩壹贰貳叁參肆伍陆陸柒捌玖拾佰仟\d０-９]+\s*[章回节節卷部篇集][^，。！？；,!?;]*$|(?:序章|楔子|引子|序言|前言|引言|尾声|尾聲|后记|後記|终章|終章|结语|結語|番外)(?:\s|[：:、.．·—-]|[一二三四五六七八九十\d]|$)|(?:chapter|part|book)\s+(?:\d+|[ivxlcdm]+)\b)/iu;
 
-export function parseChapters(paragraphs: string[]): Chapter[] {
-  const headings: { title: string; start: number }[] = [];
+function regexHeadingStarts(
+  paragraphs: string[],
+): { title: string; start: number }[] {
+  const starts: { title: string; start: number }[] = [];
   paragraphs.forEach((paragraph, index) => {
     const title = paragraph.trim();
     if (title.length <= 100 && chapterHeading.test(title))
-      headings.push({ title, start: index });
+      starts.push({ title, start: index });
   });
-  if (headings.length === 0)
-    return [
-      { id: "chapter-0", title: "正文", start: 0, end: paragraphs.length },
-    ];
-  if (headings[0].start > 0) headings.unshift({ title: "开篇", start: 0 });
-  return headings.map((heading, index) => ({
-    id: `chapter-${heading.start}`,
-    title: heading.title,
-    start: heading.start,
-    end: headings[index + 1]?.start ?? paragraphs.length,
+  return starts;
+}
+
+function buildChapters(
+  paragraphs: string[],
+  starts: { title: string; start: number }[],
+): Chapter[] {
+  const sorted = [...starts].sort((left, right) => left.start - right.start);
+  if (sorted[0].start > 0) sorted.unshift({ title: "开篇", start: 0 });
+  return sorted.map((entry, index) => ({
+    id: `chapter-${entry.start}`,
+    title: entry.title.trim() || `第 ${index + 1} 章`,
+    start: entry.start,
+    end: sorted[index + 1]?.start ?? paragraphs.length,
   }));
 }
 
-export function makeBook(
+export function parseChapters(paragraphs: string[]): Chapter[] {
+  const starts = regexHeadingStarts(paragraphs);
+  if (!starts.length)
+    return [
+      { id: "chapter-0", title: "正文", start: 0, end: paragraphs.length },
+    ];
+  return buildChapters(paragraphs, starts);
+}
+
+export function detectFormat(fileName: string, bytes: Uint8Array): BookFormat {
+  const extension = fileName.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? "";
+  if (extension === "epub" || looksLikeEpub(bytes)) return "epub";
+  if (extension === "html" || extension === "htm" || extension === "xhtml")
+    return "html";
+  if (extension === "md" || extension === "markdown") return "md";
+  return "txt";
+}
+
+function titleFromName(name: string): string {
+  return (
+    name.replace(/\.(txt|epub|x?html?|md|markdown)$/i, "").trim() ||
+    "未命名书籍"
+  );
+}
+
+function finishBook(
+  name: string,
+  title: string,
+  paragraphs: string[],
+  chapters: Chapter[],
+  encoding: string,
+  format: BookFormat,
+): Book {
+  const now = Date.now();
+  return {
+    id:
+      globalThis.crypto?.randomUUID?.() ??
+      `book-${now}-${Math.random().toString(36).slice(2)}`,
+    title: title.trim() || "未命名书籍",
+    fileName: name,
+    text: paragraphs.join("\n\n"),
+    encoding,
+    format,
+    chapters,
+    addedAt: now,
+    updatedAt: now,
+    position: 0,
+    bookmarks: [],
+  };
+}
+
+export function makeTxtBook(
   name: string,
   bytes: Uint8Array,
   encoding: Encoding = "auto",
@@ -195,22 +258,82 @@ export function makeBook(
   const decoded = decodeText(bytes, encoding);
   const paragraphs = getParagraphs(decoded.text);
   if (!paragraphs.length)
-    throw new Error("这个文件没有可阅读的文字，请换一个 TXT 文件。");
-  const now = Date.now();
-  return {
-    id:
-      globalThis.crypto?.randomUUID?.() ??
-      `book-${now}-${Math.random().toString(36).slice(2)}`,
-    title: name.replace(/\.txt$/i, "").trim() || "未命名书籍",
-    fileName: name,
-    text: paragraphs.join("\n\n"),
-    encoding: decoded.encoding,
-    chapters: parseChapters(paragraphs),
-    addedAt: now,
-    updatedAt: now,
-    position: 0,
-    bookmarks: [],
-  };
+    throw new Error("这个文件没有可阅读的文字，请换一个文件。");
+  return finishBook(
+    name,
+    titleFromName(name),
+    paragraphs,
+    parseChapters(paragraphs),
+    decoded.encoding,
+    "txt",
+  );
+}
+
+function mergeChapterStarts(
+  paragraphs: string[],
+  headingStarts: { title: string; start: number }[],
+  fileRanges: { title: string; start: number; end: number }[] = [],
+): Chapter[] {
+  const starts = new Map<number, string>();
+  for (const entry of regexHeadingStarts(paragraphs))
+    starts.set(entry.start, entry.title);
+  for (const entry of headingStarts) starts.set(entry.start, entry.title);
+  for (const range of fileRanges) {
+    const covered = [...starts.keys()].some(
+      (index) => index >= range.start && index < range.end,
+    );
+    if (!covered) starts.set(range.start, range.title);
+  }
+  if (!starts.size) return parseChapters(paragraphs);
+  return buildChapters(
+    paragraphs,
+    [...starts.entries()].map(([start, title]) => ({ start, title })),
+  );
+}
+
+export async function makeBook(
+  name: string,
+  bytes: Uint8Array,
+  encoding: Encoding = "auto",
+): Promise<Book> {
+  const format = detectFormat(name, bytes);
+  if (format === "epub") {
+    const extracted = await extractEpub(bytes);
+    return finishBook(
+      name,
+      extracted.title || titleFromName(name),
+      extracted.paragraphs,
+      mergeChapterStarts(
+        extracted.paragraphs,
+        extracted.headingStarts,
+        extracted.fileRanges,
+      ),
+      "utf-8",
+      "epub",
+    );
+  }
+  if (format === "html" || format === "md") {
+    const decoded = decodeText(bytes, encoding);
+    const blocks =
+      format === "html"
+        ? htmlToBlocks(decoded.text)
+        : markdownToBlocks(decoded.text);
+    const paragraphs = blocks.map((block) => block.text);
+    if (!paragraphs.length)
+      throw new Error("这个文件没有可阅读的文字，请换一个文件。");
+    const starts = blocks.flatMap((block, index) =>
+      block.heading ? [{ title: block.text, start: index }] : [],
+    );
+    return finishBook(
+      name,
+      titleFromName(name),
+      paragraphs,
+      mergeChapterStarts(paragraphs, starts),
+      decoded.encoding,
+      format,
+    );
+  }
+  return makeTxtBook(name, bytes, encoding);
 }
 
 export function getChapterForPosition(book: Book, position: number): Chapter {
@@ -234,7 +357,10 @@ export function getChapterForPosition(book: Book, position: number): Chapter {
 }
 
 export function createSampleBook(): Book {
-  const book = makeBook("山海之间.txt", new TextEncoder().encode(SAMPLE_TEXT));
+  const book = makeTxtBook(
+    "山海之间.txt",
+    new TextEncoder().encode(SAMPLE_TEXT),
+  );
   return { ...book, id: "sample-window-letters" };
 }
 

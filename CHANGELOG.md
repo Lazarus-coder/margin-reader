@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Reading
+
+- Import EPUB, HTML, and Markdown books alongside TXT files.
+- Use EPUB headings and navigation documents as the chapter outline.
+- Keep encoding detection and the manual override for TXT and HTML; EPUB files read as UTF-8.
+
 ## 1.1.1 — 2026-09-29
 
 First public release of Margin · 余白.

@@ -3,7 +3,7 @@
   "productName": "Margin",
   "version": "1.1.1",
   "private": true,
-  "description": "A discreet, offline desktop reader for Chinese TXT novels.",
+  "description": "A discreet, offline desktop reader for Chinese novels: TXT, EPUB, HTML, and Markdown.",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -46,6 +46,8 @@
     "chinese",
     "novel",
     "txt",
+    "epub",
+    "markdown",
     "electron",
     "offline",
     "desktop",

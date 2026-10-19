@@ -4,7 +4,7 @@
 
 [简体中文](README.zh-CN.md) · [Download](https://github.com/Lazarus-coder/margin-reader/releases/latest) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
-Margin is a small, offline desktop reader for Chinese TXT novels. It opens as a plain text workspace: a neutral `notes.txt` tab, line numbers, and quiet controls. Put it in a corner, pick up where you left off, and switch to your notes with one key.
+Margin is a small, offline desktop reader for Chinese novels — TXT, EPUB, HTML, and Markdown. It opens as a plain text workspace: a neutral `notes.txt` tab, line numbers, and quiet controls. Put it in a corner, pick up where you left off, and switch to your notes with one key.
 
 ![Margin in Desk view, showing the original Chinese sample story](docs/images/desk.png)
 
@@ -12,7 +12,7 @@ Margin is a small, offline desktop reader for Chinese TXT novels. It opens as a 
 
 - **Fits between the windows.** A movable, resizable mini reader starts at 360 × 320 px, with optional always-on-top and window opacity.
 - **Looks like a desk tool.** Desk view uses a neutral title and file tab. `Esc` opens a working notepad; optional covers activate when the window loses focus or your pointer leaves.
-- **Made for Chinese novels.** UTF-8, GB18030/GBK, Big5, and UTF-16; automatic chapter recognition and a manual encoding override for older files.
+- **Made for Chinese novels.** TXT with UTF-8, GB18030/GBK, Big5, and UTF-16 detection plus a manual override for older files; EPUB books bring their own chapter outline; HTML and Markdown pages become clean text.
 - **Keeps your place.** A local bookshelf, bookmarks, in-book search, chapter navigation, and automatically saved progress.
 - **Comfort when you want it.** Switch to Reading view for roomier typography. Three themes, adjustable text size and line spacing, and serif/sans-serif reading fonts.
 - **Stays on your computer.** No account, uploads, analytics, cloud service, or internet connection needed to read.
@@ -50,7 +50,7 @@ On Ubuntu 24.04 and later, AppArmor's user-namespace restrictions may prevent th
 
 ## Start reading
 
-1. Click **Import .txt file**, press `⌘O` / `Ctrl+O`, or drop one or more `.txt` files onto the window. Each file can be up to 100 MB.
+1. Click **Import book file**, press `⌘O` / `Ctrl+O`, or drop one or more book files (`.txt`, `.epub`, `.html`, `.md`) onto the window. Each file can be up to 100 MB.
 2. Choose a chapter from the outline, search for a phrase, or use the progress slider. Your reading position saves automatically.
 3. Press `M` for the mini reader. Drag its top bar to move it, or its edges to resize it. Open Preferences to pin the window, adjust opacity, or enable automatic covers.
 4. Press `Esc` for quick notes and again to return. Press `⌘⇧X` / `Ctrl+Shift+X` to hide or restore the whole app from another application.
@@ -59,7 +59,7 @@ An original Chinese sample story is included so you can try everything before im
 
 ### Chinese text and encodings
 
-Automatic detection recognizes Unicode byte-order marks and valid UTF-8, then uses a heuristic for GB18030 and Big5. If text looks garbled, choose **GBK** or **Big5** in the import dialog and import the original file again. This creates a new entry; you can remove the garbled copy afterward. Original files are never modified.
+Automatic detection recognizes Unicode byte-order marks and valid UTF-8, then uses a heuristic for GB18030 and Big5. If text looks garbled, choose **GBK** or **Big5** in the import dialog and import the original file again. The encoding choice applies to TXT and HTML files; EPUB files do not need it. This creates a new entry; you can remove the garbled copy afterward. Original files are never modified.
 
 Chinese headings such as `第一章`, `第二回`, `楔子`, and `尾声`, plus English chapter headings, form the outline. Text without headings remains readable as one chapter. Very long chapters are shown in sections; **Next section** continues the same chapter.
 
