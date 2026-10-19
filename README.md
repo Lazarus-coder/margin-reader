@@ -28,10 +28,10 @@ Get an archive from the **Assets** section of the [latest release](https://githu
 
 | Your computer                        | Release file                    |
 | ------------------------------------ | ------------------------------- |
-| Mac with Apple Silicon (M1 or newer) | `Margin-1.2.0-macos-arm64.zip`  |
-| Mac with an Intel processor          | `Margin-1.2.0-macos-x64.zip`    |
-| Windows, Intel/AMD 64-bit            | `Margin-1.2.0-windows-x64.zip`  |
-| Linux, Intel/AMD 64-bit              | `Margin-1.2.0-linux-x64.tar.gz` |
+| Mac with Apple Silicon (M1 or newer) | `Margin-1.3.0-macos-arm64.zip`  |
+| Mac with an Intel processor          | `Margin-1.3.0-macos-x64.zip`    |
+| Windows, Intel/AMD 64-bit            | `Margin-1.3.0-windows-x64.zip`  |
+| Linux, Intel/AMD 64-bit              | `Margin-1.3.0-linux-x64.tar.gz` |
 
 Use the matching versioned filename on the release page. Releases include SHA-256 checksums. macOS Apple Silicon is verified locally; builds for the other platforms run through GitHub Actions. Linux desktop behavior can vary; see [platform notes](#platform-notes).
 
@@ -42,7 +42,7 @@ Use the matching versioned filename on the release page. Releases include SHA-25
 **Linux:** Extract the archive and launch `Margin` in the extracted folder. A graphical desktop with Electron's system dependencies and Chinese fonts is required. For example:
 
 ```sh
-tar -xzf Margin-1.2.0-linux-x64.tar.gz
+tar -xzf Margin-1.3.0-linux-x64.tar.gz
 cd Margin-linux-x64
 ./Margin
 ```
