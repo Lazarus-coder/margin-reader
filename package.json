@@ -1,7 +1,7 @@
 {
   "name": "margin-reader",
   "productName": "Margin",
-  "version": "1.4.0-rc.1",
+  "version": "1.4.0",
   "private": true,
   "description": "A discreet, offline desktop reader for Chinese novels: TXT, EPUB, HTML, and Markdown, with the four classic novels included.",
   "type": "module",

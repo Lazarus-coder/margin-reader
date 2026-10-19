@@ -26,23 +26,23 @@ Margin is a small, offline desktop reader for Chinese novels — TXT, EPUB, HTML
 
 Get an archive from the **Assets** section of the [latest release](https://github.com/Lazarus-coder/margin-reader/releases/latest). The app includes its runtime; **you do not need Node.js or npm**. GitHub's “Source code” archives are for developers.
 
-| Your computer                        | Release file                    |
-| ------------------------------------ | ------------------------------- |
-| Mac with Apple Silicon (M1 or newer) | `Margin-1.3.0-macos-arm64.zip`  |
-| Mac with an Intel processor          | `Margin-1.3.0-macos-x64.zip`    |
-| Windows, Intel/AMD 64-bit            | `Margin-1.3.0-windows-x64.zip`  |
-| Linux, Intel/AMD 64-bit              | `Margin-1.3.0-linux-x64.tar.gz` |
+| Your computer                        | Recommended installer                | Portable archive                |
+| ------------------------------------ | ------------------------------------ | ------------------------------- |
+| Mac with Apple Silicon (M1 or newer) | `Margin-1.4.0-macos-arm64.dmg`       | `Margin-1.4.0-macos-arm64.zip`  |
+| Mac with an Intel processor          | `Margin-1.4.0-macos-x64.dmg`         | `Margin-1.4.0-macos-x64.zip`    |
+| Windows, Intel/AMD 64-bit            | `Margin-1.4.0-windows-x64-setup.exe` | `Margin-1.4.0-windows-x64.zip`  |
+| Linux, Intel/AMD 64-bit              | —                                    | `Margin-1.4.0-linux-x64.tar.gz` |
 
 Use the matching versioned filename on the release page. Releases include SHA-256 checksums. macOS Apple Silicon is verified locally; builds for the other platforms run through GitHub Actions. Linux desktop behavior can vary; see [platform notes](#platform-notes).
 
-**macOS:** Unzip, drag `Margin.app` to Applications, and open it. Builds are not Developer ID signed or notarized. If macOS blocks launch, after trying to open the app, go to **System Settings → Privacy & Security → Open Anyway** for Margin. See [Apple's instructions](https://support.apple.com/102445).
+**macOS:** Open the `.dmg`, drag `Margin` into Applications, and launch it from there — the first start directly inside the mounted image is slower. Builds are not Developer ID signed or notarized. If macOS blocks launch, after trying to open the app, go to **System Settings → Privacy & Security → Open Anyway** for Margin. See [Apple's instructions](https://support.apple.com/102445).
 
-**Windows:** Extract the entire ZIP to a folder and run `Margin.exe` inside it. Keep the adjacent files together. The app is not code-signed, so Windows may show an unknown-publisher warning. No installer is required.
+**Windows:** Run the `setup.exe` and follow the wizard — it installs for the current user, adds a Start menu shortcut, and offers an optional desktop icon. The app is not code-signed, so Windows may show an unknown-publisher warning. Prefer a portable copy? Extract the ZIP to a folder and run `Margin.exe` inside it, keeping the adjacent files together.
 
 **Linux:** Extract the archive and launch `Margin` in the extracted folder. A graphical desktop with Electron's system dependencies and Chinese fonts is required. For example:
 
 ```sh
-tar -xzf Margin-1.3.0-linux-x64.tar.gz
+tar -xzf Margin-1.4.0-linux-x64.tar.gz
 cd Margin-linux-x64
 ./Margin
 ```

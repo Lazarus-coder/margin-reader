@@ -32,23 +32,23 @@
 
 前往[最新 Release](https://github.com/Lazarus-coder/margin-reader/releases/latest)，在 **Assets** 中下载适合你电脑的安装包。**无需安装 Node.js 或 npm。** GitHub 自动生成的 “Source code” 是源码，不是可直接运行的应用。
 
-| 电脑类型                           | 下载文件                        |
-| ---------------------------------- | ------------------------------- |
-| Apple Silicon Mac（M1 及更新芯片） | `Margin-1.3.0-macos-arm64.zip`  |
-| Intel Mac                          | `Margin-1.3.0-macos-x64.zip`    |
-| Windows，Intel/AMD 64 位           | `Margin-1.3.0-windows-x64.zip`  |
-| Linux，Intel/AMD 64 位             | `Margin-1.3.0-linux-x64.tar.gz` |
+| 电脑类型                           | 推荐安装包                           | 便携版                          |
+| ---------------------------------- | ------------------------------------ | ------------------------------- |
+| Apple Silicon Mac（M1 及更新芯片） | `Margin-1.4.0-macos-arm64.dmg`       | `Margin-1.4.0-macos-arm64.zip`  |
+| Intel Mac                          | `Margin-1.4.0-macos-x64.dmg`         | `Margin-1.4.0-macos-x64.zip`    |
+| Windows，Intel/AMD 64 位           | `Margin-1.4.0-windows-x64-setup.exe` | `Margin-1.4.0-windows-x64.zip`  |
+| Linux，Intel/AMD 64 位             | —                                    | `Margin-1.4.0-linux-x64.tar.gz` |
 
 请以 Release 页面上的版本号和文件名为准。发布包附带 SHA-256 校验值。macOS Apple Silicon 已在本地验证；其他平台由 GitHub Actions 构建。Linux 的部分窗口功能取决于桌面环境，详见下方说明。
 
-**macOS：** 解压后将 `Margin.app` 拖到“应用程序”文件夹，再打开。当前版本未使用 Developer ID 签名，也未经过 Apple 公证。如系统阻止运行，先尝试打开一次，再进入 **系统设置 → 隐私与安全性 → 仍要打开**，为 Margin 单独放行。参见 [Apple 官方说明](https://support.apple.com/zh-cn/102445)。
+**macOS：** 打开 `.dmg`，把 `Margin` 拖入“应用程序”文件夹，再从那里启动——直接从挂载镜像里首次启动会慢一些。当前版本未使用 Developer ID 签名，也未经过 Apple 公证。如系统阻止运行，先尝试打开一次，再进入 **系统设置 → 隐私与安全性 → 仍要打开**，为 Margin 单独放行。参见 [Apple 官方说明](https://support.apple.com/zh-cn/102445)。
 
-**Windows：** 将整个 ZIP 解压到一个文件夹，运行其中的 `Margin.exe`。请保留同目录下的所有文件。当前版本没有代码签名，系统可能提示发布者未知；无需运行安装程序。
+**Windows：** 运行 `setup.exe` 安装包并按向导完成——按当前用户安装（不会弹出管理员提示）、自动创建开始菜单快捷方式，可选桌面图标。当前版本没有代码签名，系统可能提示发布者未知。想用便携版？把 ZIP 解压到一个文件夹，运行其中的 `Margin.exe`，请保留同目录下的所有文件。
 
 **Linux：** 解压后运行文件夹中的 `Margin`。需要图形桌面、Electron 所需系统依赖和中文字体。例如：
 
 ```sh
-tar -xzf Margin-1.3.0-linux-x64.tar.gz
+tar -xzf Margin-1.4.0-linux-x64.tar.gz
 cd Margin-linux-x64
 ./Margin
 ```
