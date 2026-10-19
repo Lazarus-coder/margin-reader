@@ -42,6 +42,7 @@ import {
   getParagraphs,
   loadBooks,
   makeBook,
+  makeTxtBook,
   saveBook,
   type Book,
   type Encoding,
@@ -74,6 +75,12 @@ const defaults: Preferences = {
   pinned: false,
 };
 const CHUNK = 160;
+const CLASSIC_BOOKS = [
+  { id: "sanguo", title: "三國演義" },
+  { id: "shuihu", title: "水滸傳" },
+  { id: "xiyouji", title: "西遊記" },
+  { id: "hongloumeng", title: "紅樓夢" },
+] as const;
 function readPreferences(): Preferences {
   try {
     const value = JSON.parse(
@@ -261,6 +268,32 @@ export default function App() {
         }
         if (cancelled) return;
         localStorage.setItem("margin-initialized", "true");
+        if (
+          native?.readClassic &&
+          !localStorage.getItem("margin-classics-ready") &&
+          !stored.some((b) => b.id.startsWith("classic-"))
+        ) {
+          localStorage.setItem("margin-classics-ready", "true");
+          const seeded: Book[] = [];
+          for (const classic of CLASSIC_BOOKS) {
+            try {
+              const text = await native.readClassic(classic.id);
+              const next = {
+                ...makeTxtBook(
+                  `${classic.title}.txt`,
+                  new TextEncoder().encode(text),
+                ),
+                id: `classic-${classic.id}`,
+              };
+              await saveBook(next);
+              seeded.push(next);
+            } catch (error) {
+              console.warn(`Classic book ${classic.id} is unavailable.`, error);
+            }
+          }
+          stored = [...stored, ...seeded];
+        }
+        if (cancelled) return;
         const last = localStorage.getItem("margin-active");
         setBooks(stored);
         setActiveId(

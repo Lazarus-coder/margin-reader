@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Reading
+
+- Bundle the four classic novels — 三國演義, 水滸傳, 西遊記, and 紅樓夢 — in Traditional Chinese; they join the shelf on first launch (Wikisource transcriptions; 水滸傳 from the Project Gutenberg 70-chapter edition).
+
 ### Desktop
 
 - New vermilion-seal app icon with a matching menu bar / tray mark.

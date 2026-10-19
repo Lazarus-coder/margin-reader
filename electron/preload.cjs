@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld(
     minimize: () => ipcRenderer.invoke("reader:minimize"),
     close: () => ipcRenderer.invoke("reader:close"),
     getState: () => ipcRenderer.invoke("reader:get-state"),
+    readClassic: (id) => ipcRenderer.invoke("reader:read-classic", id),
     onState: (callback) => {
       if (typeof callback !== "function")
         throw new TypeError("A state callback is required.");

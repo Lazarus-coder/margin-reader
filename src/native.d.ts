@@ -17,6 +17,7 @@ export interface ReaderNativeAPI {
   minimize(): Promise<void>;
   close(): Promise<void>;
   getState(): Promise<ReaderNativeState>;
+  readClassic(id: string): Promise<string>;
   onState(callback: (state: ReaderNativeState) => void): () => void;
   onBeforeClose(callback: () => Promise<void>): () => void;
 }

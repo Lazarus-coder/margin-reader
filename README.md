@@ -13,6 +13,7 @@ Margin is a small, offline desktop reader for Chinese novels — TXT, EPUB, HTML
 - **Fits between the windows.** A movable, resizable mini reader starts at 360 × 320 px, with optional always-on-top and window opacity.
 - **Looks like a desk tool.** Desk view uses a neutral title and file tab. `Esc` opens a working notepad; optional covers activate when the window loses focus or your pointer leaves.
 - **Made for Chinese novels.** TXT with UTF-8, GB18030/GBK, Big5, and UTF-16 detection plus a manual override for older files; EPUB books bring their own chapter outline; HTML and Markdown pages become clean text.
+- **The classics are included.** 三國演義, 水滸傳, 西遊記, and 紅樓夢 ship inside the app in Traditional Chinese and join your shelf on first launch.
 - **Keeps your place.** A local bookshelf, bookmarks, in-book search, chapter navigation, and automatically saved progress.
 - **Comfort when you want it.** Switch to Reading view for roomier typography. Three themes, adjustable text size and line spacing, and serif/sans-serif reading fonts.
 - **Stays on your computer.** No account, uploads, analytics, cloud service, or internet connection needed to read.
@@ -144,3 +145,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the project layout and release proces
 ## License
 
 [MIT](LICENSE). Bundled dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
+
+The bundled classic novels are public-domain texts from Wikisource (community-proofread transcriptions) and, for 水滸傳, the Project Gutenberg 70-chapter edition; Project Gutenberg boilerplate has been removed.

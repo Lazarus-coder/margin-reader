@@ -318,13 +318,18 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
           page.getByRole("button", { name: `Remove ${title}`, exact: true }),
         ).toHaveCount(0);
       }
+      // The sample stays on the shelf; the reader falls back to the most
+      // recently read remaining book, which is 紅樓夢 after the reload.
+      await expect(
+        page.locator(".book-item").filter({ hasText: "山海之间" }).first(),
+      ).toBeVisible();
       await expect(
         page.getByRole("heading", {
-          name: "第一章 风从书页间经过",
+          name: "第一回 甄士隱夢幻識通靈 賈雨村風塵懷閨秀",
           exact: true,
         }),
       ).toBeVisible();
-      await expect(page.locator(".book-item")).toHaveCount(1);
+      await expect(page.locator(".book-item")).toHaveCount(5);
     });
 
     await test.step("retains all 350 paragraphs across bounded reading sections", async () => {
@@ -366,6 +371,26 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
         .click();
       await expect(progress).toHaveValue("160");
       await expect(rendered.first()).toHaveText(allParagraphs[160]);
+    });
+
+    await test.step("ships the four classic novels with complete outlines", async () => {
+      for (const title of ["三國演義", "水滸傳", "西遊記", "紅樓夢"]) {
+        await expect(
+          page.locator(".book-item").filter({ hasText: title }).first(),
+        ).toBeVisible();
+      }
+      await page
+        .locator(".book-item")
+        .filter({ hasText: "三國演義" })
+        .first()
+        .click();
+      await expect(
+        page.getByRole("heading", {
+          name: "第一回 宴桃園豪傑三結義 斬黃巾英雄首立功",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(page.locator(".chapter-list button")).toHaveCount(120);
     });
 
     await test.step("imports an EPUB with its own chapter outline", async () => {

@@ -98,6 +98,15 @@ export async function packageApplication({ platform, arch }) {
         path.join(staging, "assets/icon.png"),
       );
     }
+    // The bundled classic novels ship as plain text inside the package.
+    if (await exists(path.join(root, "assets/classics/xiyouji.txt"))) {
+      await mkdir(path.join(staging, "assets"), { recursive: true });
+      await cp(
+        path.join(root, "assets/classics"),
+        path.join(staging, "assets/classics"),
+        { recursive: true },
+      );
+    }
     // React and the other renderer dependencies are already bundled by Vite.
     const runtimePackage = Object.fromEntries(
       [
