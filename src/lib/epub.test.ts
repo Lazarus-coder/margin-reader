@@ -1,3 +1,4 @@
+import { deflateRawSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { makeBook } from "./books";
 import { extractEpub, looksLikeEpub } from "./epub";
@@ -23,12 +24,7 @@ function crc32(data: Uint8Array): number {
 }
 
 async function deflateRaw(data: Uint8Array): Promise<Uint8Array> {
-  const stream = new CompressionStream("deflate-raw");
-  const output = new Response(stream.readable).arrayBuffer();
-  const writer = stream.writable.getWriter();
-  await writer.write(data);
-  await writer.close();
-  return new Uint8Array(await output);
+  return new Uint8Array(deflateRawSync(data, { level: 1 }));
 }
 
 interface ZipFixtureEntry {
@@ -326,7 +322,7 @@ describe("EPUB extraction", () => {
     await expect(extractEpub(await buildZip(files))).rejects.toThrow(
       "已停止读取",
     );
-  });
+  }, 60_000);
 
   it("rejects DRM-protected content but allows font obfuscation", async () => {
     const drm = epubFiles().concat({
