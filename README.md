@@ -56,11 +56,13 @@ On Ubuntu 24.04 and later, AppArmor's user-namespace restrictions may prevent th
 3. Press `M` for the mini reader. Drag its top bar to move it, or its edges to resize it. Open Preferences to pin the window, adjust opacity, or enable automatic covers.
 4. Press `Esc` for quick notes and again to return. Press `⌘⇧X` / `Ctrl+Shift+X` to hide or restore the whole app from another application.
 
+You can import several files at once and see which file is being opened. Reimporting an unchanged file with the same filename opens its existing shelf entry, keeping your progress and bookmarks. Changed text or chapter outlines create a separate entry. If some files fail, the import dialog keeps the success counts and each failure reason visible; **Retry failed files** tries only those files again.
+
 An original Chinese sample story is included so you can try everything before importing a book. The interface currently uses English labels; Chinese book text, filenames, search, and chapter headings are supported.
 
 ### Chinese text and encodings
 
-Automatic detection recognizes Unicode byte-order marks and valid UTF-8, then uses a heuristic for GB18030 and Big5. If text looks garbled, choose **GBK** or **Big5** in the import dialog and import the original file again. The encoding choice applies to TXT and HTML files; EPUB files do not need it. This creates a new entry; you can remove the garbled copy afterward. Original files are never modified.
+Automatic detection recognizes Unicode byte-order marks and valid UTF-8, then uses a heuristic for GB18030 and Big5. If text looks garbled, choose **GBK** or **Big5** in the import dialog and import the original file again. The encoding choice applies to TXT and HTML files; EPUB files do not need it. If the decoded text changes, this creates a new entry; you can remove the garbled copy afterward. Original files are never modified.
 
 Chinese headings such as `第一章`, `第二回`, `楔子`, and `尾声`, plus English chapter headings, form the outline. Text without headings remains readable as one chapter. Very long chapters are shown in sections; **Next section** continues the same chapter.
 

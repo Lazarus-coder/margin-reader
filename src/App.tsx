@@ -40,13 +40,17 @@ import {
   getChapterForPosition,
   getParagraphs,
   loadBooks,
-  makeBook,
   saveBook,
   seedClassics,
   type Book,
   type Encoding,
 } from "./lib";
 import { deleteBookWithPendingSave, flushBookSaves } from "./lib/pending-saves";
+import {
+  importBookFiles,
+  type ImportProgress,
+  type ImportReport,
+} from "./lib/imports";
 
 type Preferences = {
   workspaceMode: boolean;
@@ -165,7 +169,11 @@ export default function App() {
   const [importOpen, setImportOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [encoding, setEncoding] = useState<Encoding>("auto");
-  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(
+    null,
+  );
+  const [importReport, setImportReport] = useState<ImportReport | null>(null);
+  const importing = importProgress !== null;
   const [dragging, setDragging] = useState(false);
   const [toast, setToast] = useState("");
   const [removeId, setRemoveId] = useState<string | null>(null);
@@ -179,6 +187,7 @@ export default function App() {
   const [shortcutAvailable, setShortcutAvailable] = useState(true);
   const [hideDock, setHideDock] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const importLock = useRef(false);
   const reader = useRef<HTMLDivElement>(null);
   const searchInput = useRef<HTMLInputElement>(null);
   const pendingSaves = useRef(new Map<string, Book>());
@@ -219,6 +228,16 @@ export default function App() {
   }, [paragraphs, query]);
 
   const notify = useCallback((message: string) => setToast(message), []);
+  const openImport = useCallback(() => {
+    setHelpOpen(false);
+    setRemoveId(null);
+    setImportOpen(true);
+  }, []);
+  const closeImport = useCallback(() => {
+    if (importLock.current) return;
+    setImportOpen(false);
+    setImportReport(null);
+  }, []);
   const activeSaves = useRef(new Set<Promise<void>>());
   const flushSaves = useCallback(async () => {
     await flushBookSaves(pendingSaves.current, activeSaves.current, () =>
@@ -312,16 +331,24 @@ export default function App() {
     const focusable = () =>
       Array.from(
         dialog?.querySelectorAll<HTMLElement>(
-          'button:not(:disabled), input:not([type="file"]), select, textarea, [tabindex="0"]',
+          'button:not(:disabled), input:not([type="file"]):not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]:not(:disabled)',
         ) || [],
       );
-    focusable()[0]?.focus();
+    (focusable()[0] || dialog)?.focus();
     const trap = (event: KeyboardEvent) => {
       if (event.key !== "Tab") return;
       const targets = focusable();
+      if (!targets.length) {
+        event.preventDefault();
+        dialog?.focus();
+        return;
+      }
       const first = targets[0];
       const last = targets[targets.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
+      if (!targets.includes(document.activeElement as HTMLElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first)?.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last?.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -334,7 +361,7 @@ export default function App() {
       document.removeEventListener("keydown", trap);
       previous?.focus();
     };
-  }, [importOpen, helpOpen, removeId]);
+  }, [importOpen, helpOpen, removeId, importing]);
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 4200);
@@ -511,7 +538,7 @@ export default function App() {
       );
       if (event.key === "Escape") {
         event.preventDefault();
-        if (importOpen) setImportOpen(false);
+        if (importOpen) closeImport();
         else if (helpOpen) setHelpOpen(false);
         else if (removeId) setRemoveId(null);
         else setCovered((v) => !v);
@@ -519,9 +546,10 @@ export default function App() {
       }
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "o") {
         event.preventDefault();
-        setImportOpen(true);
+        openImport();
         return;
       }
+      if (importOpen || helpOpen || removeId) return;
       if (
         (event.metaKey || event.ctrlKey) &&
         event.key.toLowerCase() === "f" &&
@@ -534,7 +562,7 @@ export default function App() {
         setTimeout(() => searchInput.current?.focus(), 50);
         return;
       }
-      if (typing || covered || importOpen || helpOpen || removeId) return;
+      if (typing || covered) return;
       if (
         event.key === "ArrowRight" ||
         event.key === "PageDown" ||
@@ -570,6 +598,8 @@ export default function App() {
   }, [
     covered,
     importOpen,
+    closeImport,
+    openImport,
     helpOpen,
     removeId,
     turnPage,
@@ -578,56 +608,55 @@ export default function App() {
   ]);
 
   const importFiles = async (files: FileList | File[]) => {
-    if (importing) return;
-    setImporting(true);
-    let lastId = "";
-    let count = 0;
-    const errors: string[] = [];
-    for (const file of Array.from(files)) {
-      if (!/\.(txt|epub|x?html?|md|markdown)$/i.test(file.name)) {
-        errors.push(`${file.name}: unsupported file type`);
-        continue;
-      }
-      if (file.size > 100 * 1024 * 1024) {
-        errors.push(`${file.name}: maximum size is 100 MB`);
-        continue;
-      }
-      try {
-        const next = await makeBook(
-          file.name,
-          new Uint8Array(await file.arrayBuffer()),
-          encoding,
-        );
-        if (!next.text.trim()) throw new Error("This file is empty");
-        await saveBook(next);
-        setBooks((items) => [next, ...items.filter((b) => b.id !== next.id)]);
-        lastId = next.id;
-        count++;
-      } catch (error) {
-        errors.push(
-          `${file.name}: ${error instanceof Error ? error.message : "could not import"}`,
-        );
-      }
+    if (importLock.current || !files.length) return;
+    if (!ready) {
+      notify("Your library is still opening. Try importing in a moment.");
+      return;
     }
-    if (count) {
-      setActiveId(lastId);
-      setTab("shelf");
-      setImportOpen(false);
-      setCovered(false);
+    importLock.current = true;
+    openImport();
+    setImportReport(null);
+    setToast("");
+    try {
+      const report = await importBookFiles(
+        Array.from(files),
+        encoding,
+        books,
+        setImportProgress,
+        (next) => setBooks((items) => [next, ...items]),
+      );
+      if (report.lastBookId) {
+        setActiveId(report.lastBookId);
+        setTab("shelf");
+        setCovered(false);
+      }
+      if (report.failures.length) {
+        setImportReport(report);
+      } else {
+        setImportOpen(false);
+        notify(
+          report.existing
+            ? `${report.imported} imported · ${report.existing} already on your shelf. Reading positions kept.`
+            : `${report.imported} ${report.imported === 1 ? "file" : "files"} imported. Saved locally.`,
+        );
+      }
+    } catch {
+      notify(
+        "The import stopped. Books already saved are on your shelf. Please choose the files again.",
+      );
+    } finally {
+      importLock.current = false;
+      setImportProgress(null);
+      if (fileInput.current) fileInput.current.value = "";
     }
-    notify(
-      errors.length
-        ? errors.join(" · ")
-        : prefs.workspaceMode
-          ? `${count} ${count === 1 ? "file" : "files"} imported. Saved locally.`
-          : `${count === 1 ? "Your book is" : `${count} books are`} ready. Happy reading.`,
-    );
-    setImporting(false);
-    if (fileInput.current) fileInput.current.value = "";
   };
 
   const onScroll = () => {
     if (
+      covered ||
+      importOpen ||
+      helpOpen ||
+      removeId ||
       restoring.current ||
       performance.now() < restoreUntil.current ||
       !book ||
@@ -721,7 +750,8 @@ export default function App() {
       }}
       onDragOver={(event) => {
         event.preventDefault();
-        if (event.dataTransfer.types.includes("Files")) setDragging(true);
+        if (!importLock.current && event.dataTransfer.types.includes("Files"))
+          setDragging(true);
       }}
       onDragLeave={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node))
@@ -892,10 +922,7 @@ export default function App() {
                             ? "LOCAL FILES"
                             : "ON YOUR SHELF"}
                         </span>
-                        <button
-                          aria-label="Import a book"
-                          onClick={() => setImportOpen(true)}
-                        >
+                        <button aria-label="Import a book" onClick={openImport}>
                           <Plus size={15} />
                         </button>
                       </div>
@@ -957,10 +984,7 @@ export default function App() {
                           </div>
                         ))}
                       </div>
-                      <button
-                        className="import-dashed"
-                        onClick={() => setImportOpen(true)}
-                      >
+                      <button className="import-dashed" onClick={openImport}>
                         <Plus size={16} />{" "}
                         {prefs.workspaceMode
                           ? "Import book file"
@@ -1423,10 +1447,7 @@ export default function App() {
                       </>
                     )}
                   </p>
-                  <button
-                    className="primary-button"
-                    onClick={() => setImportOpen(true)}
-                  >
+                  <button className="primary-button" onClick={openImport}>
                     <Plus size={16} />{" "}
                     {prefs.workspaceMode ? "Import book file" : "Import a book"}
                   </button>
@@ -1748,7 +1769,7 @@ export default function App() {
                   </>
                 )}
               </span>
-              <button onClick={() => setImportOpen(true)}>
+              <button onClick={openImport}>
                 <ArrowDownToLine size={13} /> Import book{" "}
                 <kbd>{primaryKey} O</kbd>
               </button>
@@ -1781,49 +1802,113 @@ export default function App() {
         </div>
       )}
       {importOpen && (
-        <div
-          className="modal-backdrop"
-          onClick={() => !importing && setImportOpen(false)}
-        >
+        <div className="modal-backdrop" onClick={closeImport}>
           <section
-            className="modal import-modal"
+            className={`modal import-modal ${importReport ? "has-report" : ""}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="import-title"
+            tabIndex={-1}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="modal-top">
               <span className="modal-icon">
                 <BookOpen size={22} strokeWidth={1.4} />
               </span>
-              <Icon label="Close import" onClick={() => setImportOpen(false)}>
+              <Icon
+                label="Close import"
+                onClick={closeImport}
+                disabled={importing}
+              >
                 <X size={18} />
               </Icon>
             </div>
             <h2 id="import-title">
-              {prefs.workspaceMode
-                ? "Import book file"
-                : "Make room for a new story."}
+              {importReport
+                ? "Import results"
+                : prefs.workspaceMode
+                  ? "Import book file"
+                  : "Make room for a new story."}
             </h2>
-            <p>
-              Open a local TXT, EPUB, HTML, or Markdown file. Progress is saved
-              automatically.
-            </p>
+            {!importReport && (
+              <p>
+                Add local TXT, EPUB, HTML, or Markdown files. Unchanged files
+                already on your shelf keep their progress and bookmarks.
+              </p>
+            )}
+            {importReport && (
+              <div
+                className="import-results"
+                role="status"
+                aria-label="Import results"
+              >
+                <strong>Some files need attention</strong>
+                <p>
+                  {importReport.imported} imported · {importReport.existing}{" "}
+                  already on shelf · {importReport.failures.length} failed
+                </p>
+                <ul className="import-failures">
+                  {importReport.failures.map(({ file, message }, index) => (
+                    <li key={index}>
+                      <strong>{file.name}</strong>
+                      <span>{message}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="import-actions">
+                  <button
+                    className="primary-button"
+                    onClick={() =>
+                      void importFiles(
+                        importReport.failures.map(({ file }) => file),
+                      )
+                    }
+                  >
+                    Retry failed files
+                  </button>
+                  <button className="secondary-button" onClick={closeImport}>
+                    Continue reading
+                  </button>
+                </div>
+              </div>
+            )}
+            {importProgress && (
+              <div className="import-progress" role="status">
+                <strong>
+                  Opening{" "}
+                  {Math.min(importProgress.completed + 1, importProgress.total)}{" "}
+                  of {importProgress.total}
+                </strong>
+                <span>{importProgress.fileName || "Finishing import…"}</span>
+                <progress
+                  aria-label="Import progress"
+                  value={importProgress.completed}
+                  max={importProgress.total}
+                />
+              </div>
+            )}
             <button
-              className="file-drop"
-              disabled={importing}
+              className={`file-drop ${importReport ? "has-report" : ""}`}
+              disabled={importing || !ready}
               onClick={() => fileInput.current?.click()}
             >
               <Upload size={25} strokeWidth={1.3} />
               <strong>
-                {importing ? "Opening file…" : "Choose a book file"}
+                {importing
+                  ? "Opening files…"
+                  : !ready
+                    ? "Opening library…"
+                    : importReport
+                      ? "Choose other files"
+                      : "Choose book files"}
               </strong>
-              <span>or drag and drop it here · up to 100 MB</span>
+              <span>or drop files here · up to 100 MB each</span>
             </button>
             <label className="encoding-label">
               Text encoding · TXT / HTML
               <select
                 aria-label="Text encoding"
+                disabled={importing}
                 value={encoding}
                 onChange={(event) =>
                   setEncoding(event.target.value as Encoding)

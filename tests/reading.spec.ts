@@ -296,7 +296,11 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
         mimeType: "text/plain",
         buffer: Buffer.from("\r\n\r\n"),
       });
-      await expect(page.getByRole("status")).toContainText("没有可阅读的文字");
+      await expect(
+        page
+          .getByRole("dialog")
+          .getByRole("status", { name: "Import results" }),
+      ).toContainText("没有可阅读的文字");
       await expect(page.locator(".book-list")).not.toContainText("空白");
       await page
         .getByRole("button", { name: "Close import", exact: true })

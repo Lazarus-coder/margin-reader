@@ -1391,6 +1391,65 @@ input.reading-progress {
   font-size: 9px;
   color: var(--muted);
 }
+.file-drop.has-report {
+  padding: 12px;
+  gap: 6px;
+}
+.file-drop.has-report > svg {
+  display: none;
+}
+.import-progress,
+.import-results {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--sidebar);
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.import-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.import-progress > span {
+  color: var(--subtle);
+}
+.import-progress progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent);
+}
+.import-results p {
+  margin: 5px 0 12px;
+}
+.import-failures {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.import-failures li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+.import-failures li > span {
+  color: var(--subtle);
+}
+.import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.import-actions > button {
+  flex: 1 1 130px;
+}
 .encoding-label {
   display: flex;
   flex-direction: column;
@@ -1655,6 +1714,30 @@ input.reading-progress {
 }
 .is-compact .modal h2 {
   font-size: 21px;
+}
+.is-compact .import-modal.has-report .modal-top {
+  float: right;
+  margin: 0 0 8px 8px;
+}
+.is-compact .import-modal.has-report .modal-icon,
+.is-compact .import-results > strong {
+  display: none;
+}
+.is-compact .import-modal.has-report h2 {
+  margin-bottom: 12px;
+}
+.is-compact .import-results {
+  clear: both;
+  margin: 8px 0;
+  padding: 10px;
+}
+.is-compact .import-failures {
+  max-height: 72px;
+}
+.is-compact .import-actions > button {
+  flex-basis: 0;
+  padding: 8px 6px;
+  font-size: 10px;
 }
 @keyframes appear {
   from {
