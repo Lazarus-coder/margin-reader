@@ -37,16 +37,16 @@ import {
 } from "lucide-react";
 import {
   createSampleBook,
-  deleteBook,
   getChapterForPosition,
   getParagraphs,
   loadBooks,
   makeBook,
-  makeTxtBook,
   saveBook,
+  seedClassics,
   type Book,
   type Encoding,
 } from "./lib";
+import { deleteBookWithPendingSave, flushBookSaves } from "./lib/pending-saves";
 
 type Preferences = {
   workspaceMode: boolean;
@@ -75,12 +75,6 @@ const defaults: Preferences = {
   pinned: false,
 };
 const CHUNK = 160;
-const CLASSIC_BOOKS = [
-  { id: "sanguo", title: "三國演義" },
-  { id: "shuihu", title: "水滸傳" },
-  { id: "xiyouji", title: "西遊記" },
-  { id: "hongloumeng", title: "紅樓夢" },
-] as const;
 function readPreferences(): Preferences {
   try {
     const value = JSON.parse(
@@ -227,15 +221,9 @@ export default function App() {
   const notify = useCallback((message: string) => setToast(message), []);
   const activeSaves = useRef(new Set<Promise<void>>());
   const flushSaves = useCallback(async () => {
-    for (const item of pendingSaves.current.values()) {
-      const task = saveBook(item).catch(() =>
-        notify("Could not save locally. Check available disk space."),
-      );
-      activeSaves.current.add(task);
-      void task.finally(() => activeSaves.current.delete(task));
-    }
-    pendingSaves.current.clear();
-    await Promise.all([...activeSaves.current]);
+    await flushBookSaves(pendingSaves.current, activeSaves.current, () =>
+      notify("Could not save locally. Check available disk space."),
+    );
   }, [notify]);
   const updateBook = useCallback(
     (id: string, transform: (b: Book) => Book) => {
@@ -268,31 +256,7 @@ export default function App() {
         }
         if (cancelled) return;
         localStorage.setItem("margin-initialized", "true");
-        if (
-          native?.readClassic &&
-          !localStorage.getItem("margin-classics-ready") &&
-          !stored.some((b) => b.id.startsWith("classic-"))
-        ) {
-          localStorage.setItem("margin-classics-ready", "true");
-          const seeded: Book[] = [];
-          for (const classic of CLASSIC_BOOKS) {
-            try {
-              const text = await native.readClassic(classic.id);
-              const next = {
-                ...makeTxtBook(
-                  `${classic.title}.txt`,
-                  new TextEncoder().encode(text),
-                ),
-                id: `classic-${classic.id}`,
-              };
-              await saveBook(next);
-              seeded.push(next);
-            } catch (error) {
-              console.warn(`Classic book ${classic.id} is unavailable.`, error);
-            }
-          }
-          stored = [...stored, ...seeded];
-        }
+        stored = await seedClassics(stored, native?.readClassic);
         if (cancelled) return;
         const last = localStorage.getItem("margin-active");
         setBooks(stored);
@@ -694,8 +658,7 @@ export default function App() {
   const removeBook = async () => {
     if (!removeId) return;
     try {
-      pendingSaves.current.delete(removeId);
-      await deleteBook(removeId);
+      await deleteBookWithPendingSave(removeId, pendingSaves.current);
       const rest = books.filter((b) => b.id !== removeId);
       paragraphCounts.delete(removeId);
       setBooks(rest);

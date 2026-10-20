@@ -109,6 +109,10 @@ Books, bookmarks, and reading positions use IndexedDB. Preferences and notes use
 
 The packaged app blocks remote HTTP and WebSocket requests. Removing a book deletes its imported copy and progress, leaving your original TXT intact. Keep your original files; clearing app data removes the local library.
 
+New installations retry incomplete bundled-book imports on the next launch, while books you remove stay removed. Existing installations with the older completion flag retain their current shelf, since missing books may have been intentionally deleted.
+
+If saving reading progress or bookmarks fails, Margin keeps the latest change in memory and retries on the next save, including when the window is hidden or before a normal close. Only successfully saved changes survive an app exit.
+
 To update, quit Margin, download a newer release, and replace the application files. Keep the data directory to retain your library and settings. There is no automatic updater. Browser previews and development builds can use separate storage from the packaged app.
 
 ## Platform notes

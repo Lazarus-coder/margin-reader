@@ -232,7 +232,7 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
           page.evaluate(async () => {
             const database = await new Promise<IDBDatabase>(
               (resolve, reject) => {
-                const request = indexedDB.open("margin-reader", 1);
+                const request = indexedDB.open("margin-reader");
                 request.onsuccess = () => resolve(request.result);
                 request.onerror = () => reject(request.error);
               },
