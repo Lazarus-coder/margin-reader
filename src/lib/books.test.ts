@@ -3,6 +3,7 @@ import {
   createSampleBook,
   decodeText,
   detectFormat,
+  getBookParagraphs,
   getChapterForPosition,
   getParagraphs,
   makeBook,
@@ -203,6 +204,7 @@ describe("paragraphs and chapters", () => {
       ),
     );
     expect(book.format).toBe("md");
+    expect(book).not.toHaveProperty("codeBlockLines");
     expect(book.title).toBe("散记");
     expect(book.chapters.map((chapter) => chapter.title)).toEqual([
       "第一章 春天",
@@ -213,6 +215,39 @@ describe("paragraphs and chapters", () => {
       "引用行",
       "其一",
       "其二",
+    ]);
+  });
+
+  it("restores fenced code as one paragraph at its original chapter position", async () => {
+    const example = "Chapter 99\n\n\tprint(1)  \n";
+    const book = await makeBook(
+      "guide.md",
+      new TextEncoder().encode(
+        ["# First", "```", example, "```", "Next", "# Second", "End"].join(
+          "\n",
+        ),
+      ),
+    );
+    const paragraphs = ["First", example, "Next", "Second", "End"];
+    expect(book.text).toBe(paragraphs.join("\n\n"));
+    expect(book.codeBlockLines).toEqual({ 1: 4 });
+    expect(getBookParagraphs(structuredClone(book))).toEqual(paragraphs);
+    expect(
+      book.chapters.map(({ title, start, end }) => [title, start, end]),
+    ).toEqual([
+      ["First", 0, 3],
+      ["Second", 3, 5],
+    ]);
+    expect(getChapterForPosition({ ...book, chapters: [] }, 0).end).toBe(5);
+  });
+
+  it("keeps a chapter-like code sample in the default chapter", async () => {
+    const book = await makeBook(
+      "snippet.md",
+      new TextEncoder().encode("```\nChapter 99\n```"),
+    );
+    expect(book.chapters).toEqual([
+      { id: "chapter-0", title: "正文", start: 0, end: 1 },
     ]);
   });
 
