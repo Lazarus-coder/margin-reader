@@ -20,6 +20,8 @@ export interface Book {
   title: string;
   fileName: string;
   text: string;
+  /** Physical line counts for paragraphs containing fenced code. */
+  codeBlockLines?: Record<number, number>;
   encoding: string;
   format?: BookFormat;
   chapters: Chapter[];
@@ -170,14 +172,34 @@ export function getParagraphs(text: string): string[] {
     .filter(Boolean);
 }
 
+export function getBookParagraphs(book: Book): string[] {
+  if (!book.codeBlockLines) return getParagraphs(book.text);
+  const lines = book.text.split("\n");
+  const paragraphs: string[] = [];
+  for (let start = 0; start < lines.length;) {
+    const count = book.codeBlockLines[paragraphs.length] ?? 1;
+    if (
+      !Number.isSafeInteger(count) ||
+      count < 1 ||
+      count > lines.length - start
+    )
+      return getParagraphs(book.text);
+    paragraphs.push(lines.slice(start, start + count).join("\n"));
+    start += count + 1; // Canonical paragraphs are separated by one blank line.
+  }
+  return paragraphs;
+}
+
 const chapterHeading =
   /^(?:第\s*[零〇一二三四五六七八九十百千万萬两兩壹贰貳叁參肆伍陆陸柒捌玖拾佰仟\d０-９]+\s*[章回节節卷部篇集](?:\s|[：:、.．·—-]|$)|第\s*[零〇一二三四五六七八九十百千万萬两兩壹贰貳叁參肆伍陆陸柒捌玖拾佰仟\d０-９]+\s*[章回节節卷部篇集][^，。！？；,!?;]*$|(?:序章|楔子|引子|序言|前言|引言|尾声|尾聲|后记|後記|终章|終章|结语|結語|番外)(?:\s|[：:、.．·—-]|[一二三四五六七八九十\d]|$)|(?:chapter|part|book)\s+(?:\d+|[ivxlcdm]+)\b)/iu;
 
 function regexHeadingStarts(
   paragraphs: string[],
+  codeBlockLines?: Book["codeBlockLines"],
 ): { title: string; start: number }[] {
   const starts: { title: string; start: number }[] = [];
   paragraphs.forEach((paragraph, index) => {
+    if (codeBlockLines?.[index]) return;
     const title = paragraph.trim();
     if (title.length <= 100 && chapterHeading.test(title))
       starts.push({ title, start: index });
@@ -190,7 +212,8 @@ function buildChapters(
   starts: { title: string; start: number }[],
 ): Chapter[] {
   const sorted = [...starts].sort((left, right) => left.start - right.start);
-  if (sorted[0].start > 0) sorted.unshift({ title: "开篇", start: 0 });
+  if (!sorted.length) sorted.push({ title: "正文", start: 0 });
+  else if (sorted[0].start > 0) sorted.unshift({ title: "开篇", start: 0 });
   return sorted.map((entry, index) => ({
     id: `chapter-${entry.start}`,
     title: entry.title.trim() || `第 ${index + 1} 章`,
@@ -200,12 +223,7 @@ function buildChapters(
 }
 
 export function parseChapters(paragraphs: string[]): Chapter[] {
-  const starts = regexHeadingStarts(paragraphs);
-  if (!starts.length)
-    return [
-      { id: "chapter-0", title: "正文", start: 0, end: paragraphs.length },
-    ];
-  return buildChapters(paragraphs, starts);
+  return buildChapters(paragraphs, regexHeadingStarts(paragraphs));
 }
 
 export function detectFormat(fileName: string, bytes: Uint8Array): BookFormat {
@@ -231,6 +249,7 @@ function finishBook(
   chapters: Chapter[],
   encoding: string,
   format: BookFormat,
+  codeBlockLines?: Book["codeBlockLines"],
 ): Book {
   const now = Date.now();
   return {
@@ -240,6 +259,7 @@ function finishBook(
     title: title.trim() || "未命名书籍",
     fileName: name,
     text: paragraphs.join("\n\n"),
+    ...(codeBlockLines && { codeBlockLines }),
     encoding,
     format,
     chapters,
@@ -273,9 +293,10 @@ function mergeChapterStarts(
   paragraphs: string[],
   headingStarts: { title: string; start: number }[],
   fileRanges: { title: string; start: number; end: number }[] = [],
+  codeBlockLines?: Book["codeBlockLines"],
 ): Chapter[] {
   const starts = new Map<number, string>();
-  for (const entry of regexHeadingStarts(paragraphs))
+  for (const entry of regexHeadingStarts(paragraphs, codeBlockLines))
     starts.set(entry.start, entry.title);
   for (const entry of headingStarts) starts.set(entry.start, entry.title);
   for (const range of fileRanges) {
@@ -284,7 +305,6 @@ function mergeChapterStarts(
     );
     if (!covered) starts.set(range.start, range.title);
   }
-  if (!starts.size) return parseChapters(paragraphs);
   return buildChapters(
     paragraphs,
     [...starts.entries()].map(([start, title]) => ({ start, title })),
@@ -321,16 +341,24 @@ export async function makeBook(
     const paragraphs = blocks.map((block) => block.text);
     if (!paragraphs.length)
       throw new Error("这个文件没有可阅读的文字，请换一个文件。");
-    const starts = blocks.flatMap((block, index) =>
-      block.heading ? [{ title: block.text, start: index }] : [],
-    );
+    const starts: { title: string; start: number }[] = [];
+    let codeBlockLines: Book["codeBlockLines"];
+    blocks.forEach((block, index) => {
+      if (block.codeLines) {
+        codeBlockLines ??= {};
+        codeBlockLines[index] = block.codeLines;
+      } else if (block.heading) {
+        starts.push({ title: block.text, start: index });
+      }
+    });
     return finishBook(
       name,
       titleFromName(name),
       paragraphs,
-      mergeChapterStarts(paragraphs, starts),
+      mergeChapterStarts(paragraphs, starts, [], codeBlockLines),
       decoded.encoding,
       format,
+      codeBlockLines,
     );
   }
   return makeTxtBook(name, bytes, encoding);
@@ -342,7 +370,7 @@ export function getChapterForPosition(book: Book, position: number): Chapter {
       id: "chapter-0",
       title: "正文",
       start: 0,
-      end: getParagraphs(book.text).length,
+      end: getBookParagraphs(book).length,
     };
   const safePosition = Number.isFinite(position) ? Math.max(0, position) : 0;
   // Binary search keeps chapter lookup inexpensive for novels with thousands of chapters.

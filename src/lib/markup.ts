@@ -1,6 +1,8 @@
 export interface Block {
   text: string;
   heading: boolean;
+  /** Physical lines in a fenced code block, including blank lines. */
+  codeLines?: number;
 }
 
 const namedEntities: Record<string, string> = {
@@ -201,9 +203,9 @@ function inlineToText(text: string): string {
 /** Converts Markdown into ordered text blocks, keeping headings detectable. */
 export function markdownToBlocks(markdown: string): Block[] {
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
+  if (lines.at(-1) === "") lines.pop();
   const blocks: Block[] = [];
   let buffer = "";
-  let inFence = false;
   const flush = () => {
     const text = normalizeBlockText(inlineToText(buffer));
     if (text) blocks.push({ text, heading: false });
@@ -214,15 +216,29 @@ export function markdownToBlocks(markdown: string): Block[] {
     if (!trimmed) return;
     buffer = buffer ? joinLines(buffer, trimmed) : trimmed;
   };
-  for (const rawLine of lines) {
-    const line = rawLine.replace(/\s+$/, "");
-    if (/^\s*(```|~~~)/.test(line)) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trimEnd();
+    const opening = /^([ \t]*)(`{3,}|~{3,})(.*)$/.exec(line);
+    if (opening && !(opening[2][0] === "`" && opening[3].includes("`"))) {
       flush();
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) {
-      appendLine(line);
+      const [, indent, marker] = opening;
+      // Also accept fences indented under a list item.
+      const close = new RegExp(
+        `^(?: {0,3}|${indent})${marker[0]}{${marker.length},}[ \\t]*$`,
+      );
+      const unindent = new RegExp(`^ {0,${indent.length}}`);
+      const code: string[] = [];
+      for (i++; i < lines.length && !close.test(lines[i]); i++) {
+        const content = lines[i];
+        code.push(
+          content.startsWith(indent)
+            ? content.slice(indent.length)
+            : content.replace(unindent, ""),
+        );
+      }
+      const text = code.join("\n");
+      if (text.trim())
+        blocks.push({ text, heading: false, codeLines: code.length });
       continue;
     }
     const headingMatch = /^(#{1,6})\s+(.*)$/.exec(line);

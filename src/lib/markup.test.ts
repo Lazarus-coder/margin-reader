@@ -102,6 +102,40 @@ describe("Markdown to blocks", () => {
     const blocks = markdownToBlocks("```\n旧信\n```\n\n之后。");
     expect(blocks.map((block) => block.text)).toEqual(["旧信", "之后。"]);
   });
+
+  it("keeps fenced examples literal, including indentation and blank lines", () => {
+    const code = [
+      "if a < b and c > d:",
+      '    print("<input disabled> &amp; **ok**")',
+      "",
+      "[link](target)",
+    ];
+    const source = ["# Example", "```python", ...code, "```", "**Done**"];
+    expect(markdownToBlocks(source.join("\r\n"))).toEqual([
+      { text: "Example", heading: true },
+      { text: code.join("\n"), heading: false, codeLines: 4 },
+      { text: "Done", heading: false },
+    ]);
+  });
+
+  it("closes a fence only with matching markers and preserves examples through EOF", () => {
+    expect(
+      markdownToBlocks(
+        "  ~~~~md\n    sample\n  ~~~\n```\n~~~~info\n~~~~~\n```html\n<br>\n",
+      ),
+    ).toEqual([
+      { text: "  sample\n~~~\n```\n~~~~info", heading: false, codeLines: 4 },
+      { text: "<br>", heading: false, codeLines: 1 },
+    ]);
+  });
+
+  it("keeps a fenced example indented under a list item", () => {
+    const source = "10. Example\n\n    ```html\n      <br>\n    ```";
+    expect(markdownToBlocks(source).map((block) => block.text)).toEqual([
+      "Example",
+      "  <br>",
+    ]);
+  });
 });
 
 describe("entities", () => {

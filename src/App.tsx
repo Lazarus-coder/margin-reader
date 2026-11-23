@@ -39,7 +39,7 @@ import {
   createSampleBook,
   deleteBook,
   getChapterForPosition,
-  getParagraphs,
+  getBookParagraphs,
   loadBooks,
   makeBook,
   makeTxtBook,
@@ -115,11 +115,22 @@ function readPreferences(): Preferences {
     return defaults;
   }
 }
-const paragraphCounts = new Map<string, { text: string; count: number }>();
+const paragraphCounts = new Map<
+  string,
+  { text: string; codeBlockLines?: Book["codeBlockLines"]; count: number }
+>();
 const pct = (book: Book) => {
   let cached = paragraphCounts.get(book.id);
-  if (!cached || cached.text !== book.text) {
-    cached = { text: book.text, count: getParagraphs(book.text).length };
+  if (
+    !cached ||
+    cached.text !== book.text ||
+    cached.codeBlockLines !== book.codeBlockLines
+  ) {
+    cached = {
+      text: book.text,
+      codeBlockLines: book.codeBlockLines,
+      count: getBookParagraphs(book).length,
+    };
     paragraphCounts.set(book.id, cached);
   }
   return Math.round((book.position / Math.max(1, cached.count - 1)) * 100);
@@ -203,8 +214,8 @@ export default function App() {
   const book = books.find((b) => b.id === activeId);
   readingPosition.current = book?.position || 0;
   const paragraphs = useMemo(
-    () => (book ? getParagraphs(book.text) : []),
-    [book?.id, book?.text],
+    () => (book ? getBookParagraphs(book) : []),
+    [book?.id, book?.text, book?.codeBlockLines],
   );
   const chapter = book ? getChapterForPosition(book, book.position) : undefined;
   const chapterIndex =
@@ -1289,7 +1300,11 @@ export default function App() {
                           .slice(chunkStart, chunkEnd)
                           .map((paragraph, offset) => {
                             const index = chunkStart + offset;
+                            const isCode = Boolean(
+                              book.codeBlockLines?.[index],
+                            );
                             if (
+                              !isCode &&
                               !prefs.workspaceMode &&
                               index === chapter.start &&
                               paragraph.trim() === chapter.title.trim()
@@ -1305,6 +1320,7 @@ export default function App() {
                               <p
                                 key={index}
                                 data-paragraph={index}
+                                data-code-block={isCode || undefined}
                                 className={
                                   book.bookmarks.includes(index)
                                     ? "has-bookmark"

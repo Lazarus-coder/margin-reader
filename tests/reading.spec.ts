@@ -410,6 +410,20 @@ test("Chinese novels keep their chapters, bookmarks, appearance, and complete te
       await expect(page.locator(".book-item").first()).toContainText("EPUB");
     });
 
+    await test.step("keeps a fenced Markdown example readable after reload", async () => {
+      const code =
+        'if a < b and c > d:\n    print("<input disabled>")\n\n# done';
+      await fileInput.setInputFiles({
+        name: "example.md",
+        mimeType: "text/markdown",
+        buffer: Buffer.from(["```python", code, "```"].join("\n")),
+      });
+      const block = page.locator(".novel-text [data-code-block]");
+      await expect.poll(() => block.innerText()).toBe(code);
+      await page.reload();
+      await expect.poll(() => block.innerText()).toBe(code);
+    });
+
     expect(errors).toEqual([]);
   } finally {
     if (application) await application.close();
