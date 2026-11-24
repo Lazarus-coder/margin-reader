@@ -174,8 +174,19 @@ describe("EPUB extraction", () => {
     ]);
   });
 
-  it("falls back to the navigation document when files carry no headings", async () => {
+  it("uses the table of contents for headingless chapters even when a page list follows", async () => {
     const files = epubFiles().map((entry) => {
+      if (entry.name === "OEBPS/nav.xhtml")
+        return {
+          ...entry,
+          content: String(entry.content).replace(
+            "</body>",
+            '<nav epub:type="page-list"><ol>' +
+              '<li><a href="chapter1.xhtml#p1">1</a></li>' +
+              '<li><a href="chapter2.xhtml#p2">2</a></li>' +
+              "</ol></nav></body>",
+          ),
+        };
       if (entry.name === "OEBPS/chapter1.xhtml")
         return {
           ...entry,

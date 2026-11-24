@@ -255,7 +255,13 @@ async function readToc(
     const nav = await readText(navPath);
     if (nav) {
       const directory = directoryOf(navPath);
-      for (const anchor of nav.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi)) {
+      const sections = nav.matchAll(/<nav\b([^>]*)>([\s\S]*?)<\/nav\s*>/gi);
+      const contents = Array.from(sections).find((section) =>
+        attrValue(section[1], "epub:type")?.split(/\s+/).includes("toc"),
+      );
+      // Older books may supply a link list without marking a table of contents.
+      const links = contents?.[2] ?? nav;
+      for (const anchor of links.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi)) {
         const href = attrValue(anchor[1], "href");
         const label = inlineLabel(anchor[2]);
         if (href && label) toc.set(resolvePath(directory, href), label);
